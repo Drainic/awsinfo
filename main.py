@@ -1,40 +1,58 @@
 import argparse
-import sys
+import logging.config
+import boto3
+from tabulate import tabulate
+from s3 import S3
+from settings import logger_config
+
+logging.config.dictConfig(logger_config)
+logger = logging.getLogger('aws_info_logger')
+
 parser = argparse.ArgumentParser()
-# Global options
-parser.add_argument(
-    "-c", "--config-file",
-    help="specify the configuration file to read (default: argtest.cfg)",
-    default="argtest.cfg",
+subparsers = parser.add_subparsers(dest="service")
+# Command: s3
+parser_s3 = subparsers.add_parser(
+    "s3",
+    help="get a list of S3 bucket from account",
 )
-subparsers = parser.add_subparsers(dest="command")
-# Command: update-device
-parser_update_device = subparsers.add_parser(
-    "update-device",
-    help="update device data",
+parser_s3.add_argument(
+    "-c", "--changed",
+    action="store_true",
+    required=False,
+    help="Show the date when S3 bucket was modified (Can take additional time)",
 )
-parser_update_device.add_argument(
-    "-I", "--ip",
-    help="device IP address",
-    required=True,
+parser_s3.add_argument(
+    "-e", "--encryption",
+    action="store_true",
+    required=False,
+    help="Show if encryption enabled and encryption time",
 )
-parser_update_device.add_argument(
-    "-S", "--site-name",
-    help="new site name",
-)
-# Command: add-vlan
-parser_add_vlan = subparsers.add_parser(
-    "add-vlan",
-    help="add a VLAN",
-)
-parser_add_vlan.add_argument(
-    "--vlan-id",
-    help="new VLAN ID",
-    required=True,
-)
+
+#### Set profile. Check region
+aws_profile = 'default'
+working_session = boto3.session.Session(profile_name=aws_profile)
+logger.info(f"Profile: {aws_profile}, region: {working_session.region_name}")
+
 args = parser.parse_args()
-if not args.command:
-    parser.parse_args(["--help"])
-    sys.exit(0)
-# Do the stuff here
-print(args)
+if args.service == 's3':
+    logger.info("Analysing S3")
+    s3 = boto3.client('s3')
+    response = s3.list_buckets()
+    buckets = [bucket['Name'] for bucket in response['Buckets']]
+    bucket_info = []
+
+    for bucket_name in buckets:
+        s3_info = S3(bucket_name, last_modified=args.changed, encryption=args.encryption)
+        bucket_info.append(s3_info.bucket_stat)
+
+    def show_as_table(table_name,data):
+        if len(data) > 0:
+            print(table_name)
+            header = data[0].keys()
+            rows   = [i.values() for i in data]
+            print(tabulate(rows, header))
+            print("Total findings: {}\n".format(len(data)))
+
+    show_as_table(table_name = "S3 buckets",data = bucket_info)
+    exit()
+
