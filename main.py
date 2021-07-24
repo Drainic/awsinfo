@@ -1,6 +1,7 @@
 import argparse
 import logging.config
 import boto3
+from botocore.exceptions import ClientError, ProfileNotFound
 from tabulate import tabulate
 from s3 import S3
 from settings import logger_config
@@ -9,6 +10,14 @@ logging.config.dictConfig(logger_config)
 logger = logging.getLogger('aws_info_logger')
 
 parser = argparse.ArgumentParser()
+parser.add_argument(
+    '-p', '--profile',
+    default='default',
+    required=False,
+    metavar="AWS_PROFILE_NAME",
+    help='AWS profile from config file'
+)
+
 subparsers = parser.add_subparsers(dest="service")
 # Command: s3
 parser_s3 = subparsers.add_parser(
@@ -27,17 +36,21 @@ parser_s3.add_argument(
     required=False,
     help="Show if encryption enabled and encryption time",
 )
+args = parser.parse_args()
 
 #### Set profile. Check region
-aws_profile = 'default'
-session = boto3.session.Session(profile_name=aws_profile)
-ec2client = session.client('iam')
-paginator = ec2client.get_paginator('list_account_aliases')
+try:
+    session = boto3.session.Session(profile_name=args.profile)
+    session.client("sts").get_caller_identity()
+except (ClientError, ProfileNotFound) as e:
+    logger.error(e)
+    exit()
+
+paginator = session.client('iam').get_paginator('list_account_aliases')
 for response in paginator.paginate():
     account_name = response['AccountAliases'][0]
-logger.info(f"Profile: {aws_profile}, region: {session.region_name}, account_name: {account_name}")
+logger.info(f"Profile: {args.profile}, Region: {session.region_name}, Account_name: {account_name}")
 
-args = parser.parse_args()
 if args.service == 's3':
     logger.info("Analysing S3")
     s3 = boto3.client('s3')
