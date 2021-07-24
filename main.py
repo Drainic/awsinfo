@@ -30,8 +30,12 @@ parser_s3.add_argument(
 
 #### Set profile. Check region
 aws_profile = 'default'
-working_session = boto3.session.Session(profile_name=aws_profile)
-logger.info(f"Profile: {aws_profile}, region: {working_session.region_name}")
+session = boto3.session.Session(profile_name=aws_profile)
+ec2client = session.client('iam')
+paginator = ec2client.get_paginator('list_account_aliases')
+for response in paginator.paginate():
+    account_name = response['AccountAliases'][0]
+logger.info(f"Profile: {aws_profile}, region: {session.region_name}, account_name: {account_name}")
 
 args = parser.parse_args()
 if args.service == 's3':
