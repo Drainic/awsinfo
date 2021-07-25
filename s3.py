@@ -48,7 +48,8 @@ class S3:
                 page_iterator = paginator.paginate( Bucket = self.name)
                 for page in page_iterator:
                     if "Contents" in page:
-                        return [obj['LastModified'] for obj in sorted( page["Contents"], key=get_last_modified)][-1]
+                        result = [obj['LastModified'] for obj in sorted( page["Contents"], key=get_last_modified)][-1]
+                        return result.strftime("%d-%m-%Y %H:%M:%S")
             except ClientError as e:
                 logger.error(e)
                 return "NoPermission"
@@ -71,7 +72,6 @@ class S3:
                 return "Error", "Error"
 
     def _get_bucket_size(self):
-        # Size of the bucket
         try:
             response = self.client_cw.get_metric_statistics(
                 Namespace='AWS/S3',
@@ -95,7 +95,6 @@ class S3:
             self.size = "NoPermissions"
 
     def _get_object_number(self) -> int:
-        # Number of objects
         try:
             response = self.client_cw.get_metric_statistics(
                 Namespace='AWS/S3',
