@@ -1,19 +1,21 @@
+import logging.config
 from datetime import datetime, timedelta
+
 import boto3
 from botocore.exceptions import ClientError
-import logging.config
+
 from settings import logger_config
 
 logging.config.dictConfig(logger_config)
 logger = logging.getLogger('aws_info_logger')
 
 class S3:
-    def __init__(self, name, last_modified=False, encryption=False) -> None:
+    def __init__(self, name, last_modified=False, encryption=False, public=False) -> None:
         self.name = name
         self.size = 0
         self.object_number = 0
         self.last_modified = last_modified
-        self.public = False
+        self.public = public
         self.encryption = encryption
         self.client_s3 = boto3.client('s3')
         self.client_cw = boto3.client('cloudwatch')
@@ -21,7 +23,7 @@ class S3:
         self._get_object_number()
 
     @property
-    def bucket_stat(self,acl=False) -> dict:
+    def bucket_stat(self) -> dict:
         common_info = {
             "Bucket_name": self.name,
             "Size(MB)": self.size,
@@ -31,8 +33,8 @@ class S3:
             common_info['Last_modified'] = self._get_last_modified_date()
         if self.encryption:
             common_info['Encrypted'], common_info['Encrypt_type'] = self._check_encryption()
-        if acl:
-            common_info['ACL']
+        if self.public:
+            common_info['Public_permissions'] = self._get_bucket_acl()
         return common_info
 
     def _get_last_modified_date(self) -> str:
@@ -116,3 +118,19 @@ class S3:
         except ClientError as e:
             logger.error(e)
             self.size = "NoPermissions"
+
+    def _get_bucket_acl(self) -> list:
+        public_acl_indicator = 'http://acs.amazonaws.com/groups/global/AllUsers'
+        permissions_to_check = ['READ', 'WRITE', 'READ_ACP', 'FULL_CONTROL']
+        current_permission = []
+        try:
+            bucket_acl_response = self.client_s3.get_bucket_acl(Bucket=self.name)
+            for grant in bucket_acl_response['Grants']:
+                for (k, v) in grant.items():
+                    if k == 'Permission' and any(permission in v for permission in permissions_to_check):
+                        for (grantee_attrib_k, grantee_attrib_v) in grant['Grantee'].items():
+                            if 'URI' in grantee_attrib_k and grant['Grantee']['URI'] == public_acl_indicator:
+                                current_permission.append(v)
+            return current_permission
+        except ClientError as e:
+            logger.error(e)

@@ -1,5 +1,6 @@
 import argparse
 
+
 def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -7,13 +8,13 @@ def create_parser():
         default='default',
         required=False,
         metavar="AWS_PROFILE_NAME",
-        help='AWS profile from config file'
+        help='Which AWS profile from config file will be used'
     )
     parser.add_argument(
         '--csv',
         action="store_true",
         required=False,
-        help="Additionaly stores result into the file in the current dir",
+        help="Additionaly saves result into the file in the current dir",
     )
 
     subparsers = parser.add_subparsers(dest="service")
@@ -33,5 +34,12 @@ def create_parser():
         action="store_true",
         required=False,
         help="Collect info about encryption for S3 buckets",
+    )
+    parser_s3.add_argument(
+        "-p", "--public",
+        action="store_true",
+        required=False,
+        dest="public",
+        help="Check public permissions for the S3 bucket",
     )
     return parser

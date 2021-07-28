@@ -51,7 +51,12 @@ if args.service == 's3':
     bucket_info = []
 
     for bucket_name in buckets:
-        s3_info = S3(bucket_name, last_modified=args.modified, encryption=args.encryption)
+        s3_info = S3(
+            bucket_name,
+            last_modified=args.modified,
+            encryption=args.encryption,
+            public=args.public
+        )
         bucket_info.append(s3_info.bucket_stat)
 
     show_as_table(data=bucket_info)
