@@ -7,9 +7,9 @@ from tabulate import tabulate
 
 from parsers import create_parser
 from s3 import S3
-from settings import logger_config
+from settings import LOGGER_CONFIG
 
-logging.config.dictConfig(logger_config)
+logging.config.dictConfig(LOGGER_CONFIG)
 logger = logging.getLogger('aws_info_logger')
 
 parser = create_parser()

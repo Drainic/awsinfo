@@ -1,4 +1,4 @@
-logger_config = {
+LOGGER_CONFIG = {
     'version': 1,
     'disable_existing_loggers': False,
 
