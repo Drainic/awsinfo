@@ -121,7 +121,7 @@ class S3:
 
     def _get_bucket_acl(self) -> list:
         public_acl_indicator = 'http://acs.amazonaws.com/groups/global/AllUsers'
-        permissions_to_check = ['READ', 'WRITE', 'READ_ACP', 'FULL_CONTROL']
+        permissions_to_check = {'READ', 'WRITE', 'READ_ACP', 'FULL_CONTROL'}
         current_permission = []
         try:
             bucket_acl_response = self.client_s3.get_bucket_acl(Bucket=self.name)
