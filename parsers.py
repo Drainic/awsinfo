@@ -1,7 +1,16 @@
+"""Setting for argument parsing
+The module contains everything related to argument
+parsing
+"""
 import argparse
 
 
 def create_parser():
+    """Create parser object
+
+    Returns:
+        parser: Python object with parsed arguments
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-p', '--profile',

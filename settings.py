@@ -1,6 +1,7 @@
 """Global settings
 The file contains global variables, settings, pathes, etc
 """
+
 LOGGER_CONFIG = {
     'version': 1,
     'disable_existing_loggers': False,
