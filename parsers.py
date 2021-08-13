@@ -25,12 +25,12 @@ def create_parser():
         required=False,
         help="Additionaly saves result into the file in the current dir",
     )
-
     subparsers = parser.add_subparsers(dest="service")
+
     # Command: s3
     parser_s3 = subparsers.add_parser(
         "s3",
-        help="get a list of S3 bucket from account",
+        help="get a list of S3 bucket from the current AWS account",
     )
     parser_s3.add_argument(
         "-m", "--modified",
@@ -48,7 +48,18 @@ def create_parser():
         "-p", "--public",
         action="store_true",
         required=False,
-        dest="public",
         help="Check public permissions for the S3 bucket",
+    )
+
+    # Command: EBS
+    parser_ebs = subparsers.add_parser(
+        "ebs",
+        help="get a list of EBS in the current AWS account",
+    )
+    parser_ebs.add_argument(
+        "-u", "--unused",
+        action="store_true",
+        required=False,
+        help="Show only unused EVS volumes",
     )
     return parser

@@ -4,10 +4,9 @@ from datetime import datetime, timedelta
 import boto3
 from botocore.exceptions import ClientError
 
-from settings import logger_config
+from settings import NO_VALUE, LOGGER_NAME
 
-logging.config.dictConfig(logger_config)
-logger = logging.getLogger('aws_info_logger')
+logger = logging.getLogger(LOGGER_NAME)
 
 class S3:
     def __init__(self, name, last_modified=False, encryption=False, public=False) -> None:
@@ -42,7 +41,7 @@ class S3:
         if self.object_number > 70000:
             self.last_modified = "NotAnalysed"
         elif self.object_number == 0:
-            self.last_modified = ""
+            self.last_modified = NO_VALUE
         else:
             try:
                 get_last_modified = lambda obj: int(obj['LastModified'].strftime('%s'))
@@ -68,7 +67,7 @@ class S3:
         except ClientError as e:
             # In case if there is no encryption in place
             if e.response['Error']['Code'] == 'ServerSideEncryptionConfigurationNotFoundError':
-                return False, "None"
+                return False, NO_VALUE
             else:
                 logger.error(f"Bucket: {self.name}, unexpected error: {e}")
                 return "Error", "Error"
@@ -91,7 +90,7 @@ class S3:
             if len(response["Datapoints"]) > 0:
                 self.size = round(int(response["Datapoints"][0]["Average"])/1024/1024, 2)
             else:
-                self.size = "Empty"
+                self.size = NO_VALUE
         except ClientError as e:
             logger.error(e)
             self.size = "NoPermissions"
