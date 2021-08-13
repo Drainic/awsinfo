@@ -1,4 +1,12 @@
-logger_config = {
+"""Global settings
+The file contains global variables, settings, pathes, etc
+"""
+# If there is no value for the filed this variable will be applied
+NO_VALUE = None
+
+### Logger section
+LOGGER_NAME = "awsinfo_logger"
+LOGGER_CONFIG = {
     'version': 1,
     'disable_existing_loggers': False,
 
@@ -16,7 +24,7 @@ logger_config = {
         }
     },
     'loggers': {
-        'aws_info_logger': {
+        LOGGER_NAME: {
             'level': 'DEBUG',
             'handlers': ['console']
         }

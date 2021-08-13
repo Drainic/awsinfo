@@ -5,12 +5,13 @@ import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
 from tabulate import tabulate
 
+from ebs import get_ebs_info
 from parsers import create_parser
 from s3 import S3
-from settings import logger_config
+from settings import LOGGER_CONFIG, LOGGER_NAME
 
-logging.config.dictConfig(logger_config)
-logger = logging.getLogger('aws_info_logger')
+logging.config.dictConfig(LOGGER_CONFIG)
+logger = logging.getLogger(LOGGER_NAME)
 
 parser = create_parser()
 args = parser.parse_args()
@@ -44,17 +45,25 @@ def store_as_csv(data):
             logger.info("The file %s was created", output_file.name)
 
 if args.service == 's3':
-    logger.info("Analysing S3")
+    logger.info("Analysing S3...")
     s3 = boto3.client('s3')
     response = s3.list_buckets()
     buckets = [bucket['Name'] for bucket in response['Buckets']]
-    bucket_info = []
+    data = []
 
     for bucket_name in buckets:
-        s3_info = S3(bucket_name, last_modified=args.modified, encryption=args.encryption)
-        bucket_info.append(s3_info.bucket_stat)
+        s3_info = S3(
+            bucket_name,
+            last_modified=args.modified,
+            encryption=args.encryption,
+            public=args.public
+        )
+        data.append(s3_info.bucket_stat)
+elif args.service == 'ebs':
+    logger.info("Analysing EBS volumes...")
+    data = get_ebs_info(show_unused=args.unused)
 
-    show_as_table(data=bucket_info)
-    if args.csv:
-        store_as_csv(data=bucket_info)
-    exit()
+show_as_table(data)
+if args.csv:
+    store_as_csv(data=data)
+exit()
