@@ -4,20 +4,20 @@ from datetime import datetime, timedelta
 import boto3
 from botocore.exceptions import ClientError
 
-from settings import NO_VALUE, LOGGER_NAME
+from settings import LOGGER_NAME, NO_VALUE
 
 logger = logging.getLogger(LOGGER_NAME)
 
 class S3:
-    def __init__(self, name, last_modified=False, encryption=False, public=False) -> None:
+    def __init__(self, name, aws_session, last_modified=False, encryption=False, public=False) -> None:
         self.name = name
         self.size = 0
         self.object_number = 0
         self.last_modified = last_modified
         self.public = public
         self.encryption = encryption
-        self.client_s3 = boto3.client('s3')
-        self.client_cw = boto3.client('cloudwatch')
+        self.client_s3 = aws_session.client('s3')
+        self.client_cw = aws_session.client('cloudwatch')
         self._get_bucket_size()
         self._get_object_number()
 
@@ -39,9 +39,9 @@ class S3:
     def _get_last_modified_date(self) -> str:
         # Get last modified file(do not analyse if number of objects is more than OBJECT_NUMBER)
         if self.object_number > 70000:
-            self.last_modified = "NotAnalysed"
+            return("NotAnalysed")
         elif self.object_number == 0:
-            self.last_modified = NO_VALUE
+            return(NO_VALUE)
         else:
             try:
                 get_last_modified = lambda obj: int(obj['LastModified'].strftime('%s'))
@@ -120,7 +120,7 @@ class S3:
 
     def _get_bucket_acl(self) -> list:
         public_acl_indicator = 'http://acs.amazonaws.com/groups/global/AllUsers'
-        permissions_to_check = {'READ', 'WRITE', 'READ_ACP', 'FULL_CONTROL'}
+        permissions_to_check = {'READ', 'WRITE', 'READ_ACP', 'WRITE_ACP', 'FULL_CONTROL'}
         current_permission = []
         try:
             bucket_acl_response = self.client_s3.get_bucket_acl(Bucket=self.name)

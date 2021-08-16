@@ -25,7 +25,12 @@ def create_parser():
         required=False,
         help="Additionaly saves result into the file in the current dir",
     )
-    subparsers = parser.add_subparsers(dest="service")
+    subparsers = parser.add_subparsers(
+        dest="service",
+        metavar="SERVICE_NAME",
+        required=True,
+        help="The service name for getting information"
+    )
 
     # Command: s3
     parser_s3 = subparsers.add_parser(

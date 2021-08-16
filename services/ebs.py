@@ -4,7 +4,7 @@ from settings import NO_VALUE, LOGGER_NAME
 
 logger = logging.getLogger(LOGGER_NAME)
 
-def get_ebs_info(show_unused=False):
+def get_ebs_info(aws_session, show_unused=False):
     """Collect information about AWS volumes
 
     Args:
@@ -14,7 +14,7 @@ def get_ebs_info(show_unused=False):
     Returns:
         ebs_data_list (list): List of hashes with EBS description
     """
-    client = boto3.client("ec2")
+    client = aws_session.client("ec2")
     paginator = client.get_paginator('describe_volumes')
     ebs_data_list = []
     filters = []
