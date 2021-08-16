@@ -1,14 +1,12 @@
-import csv
 import logging.config
 
 import boto3
-from botocore.exceptions import ClientError, ProfileNotFound
-from tabulate import tabulate
 
-from ebs import get_ebs_info
+from services.ebs import get_ebs_info
 from parsers import create_parser
-from s3 import S3
+from services.s3 import S3
 from settings import LOGGER_CONFIG, LOGGER_NAME
+import tools
 
 logging.config.dictConfig(LOGGER_CONFIG)
 logger = logging.getLogger(LOGGER_NAME)
@@ -16,37 +14,11 @@ logger = logging.getLogger(LOGGER_NAME)
 parser = create_parser()
 args = parser.parse_args()
 
-#### Set profile. Check region
-try:
-    session = boto3.session.Session(profile_name=args.profile)
-    account_id = session.client("sts").get_caller_identity()["Account"]
-except (ClientError, ProfileNotFound) as e:
-    logger.error(e)
-    exit()
-
-paginator = session.client('iam').get_paginator('list_account_aliases')
-for response in paginator.paginate():
-    account_name = response['AccountAliases'][0]
-logger.info(f"Profile: {args.profile}, Region: {session.region_name}, Account_name: {account_name}, Accounf ID: {account_id}")
-
-def show_as_table(data):
-    if len(data) > 0:
-        header = data[0].keys()
-        rows = [i.values() for i in data]
-        print(tabulate(rows, header))
-        print("Total findings: {}\n".format(len(data)))
-
-def store_as_csv(data):
-    if len(data) > 0:
-        with open('result.csv', 'w', newline='') as output_file:
-            data_writer = csv.DictWriter(output_file, fieldnames=data[0].keys())
-            data_writer.writeheader()
-            data_writer.writerows(data)
-            logger.info("The file %s was created", output_file.name)
+aws_session = tools.init_connection(profile_name=args.profile)
 
 if args.service == 's3':
     logger.info("Analysing S3...")
-    s3 = boto3.client('s3')
+    s3 = aws_session.client('s3')
     response = s3.list_buckets()
     buckets = [bucket['Name'] for bucket in response['Buckets']]
     data = []
@@ -54,6 +26,7 @@ if args.service == 's3':
     for bucket_name in buckets:
         s3_info = S3(
             bucket_name,
+            aws_session=aws_session,
             last_modified=args.modified,
             encryption=args.encryption,
             public=args.public
@@ -61,9 +34,9 @@ if args.service == 's3':
         data.append(s3_info.bucket_stat)
 elif args.service == 'ebs':
     logger.info("Analysing EBS volumes...")
-    data = get_ebs_info(show_unused=args.unused)
+    data = get_ebs_info(aws_session=aws_session, show_unused=args.unused)
 
-show_as_table(data)
+tools.show_as_table(data)
 if args.csv:
-    store_as_csv(data=data)
+    tools.store_as_csv(data=data)
 exit()
