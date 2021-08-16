@@ -1,8 +1,19 @@
-from logging import Filter
 import boto3
-from settings import NO_VALUE
+import logging
+from settings import NO_VALUE, LOGGER_NAME
+
+logger = logging.getLogger(LOGGER_NAME)
 
 def get_ebs_info(show_unused=False):
+    """Collect information about AWS volumes
+
+    Args:
+        show_unused (bool, optional): If True, the func will return only volumes
+        with state=available. Defaults to False.
+
+    Returns:
+        ebs_data_list (list): List of hashes with EBS description
+    """
     client = boto3.client("ec2")
     paginator = client.get_paginator('describe_volumes')
     ebs_data_list = []
@@ -33,4 +44,6 @@ def get_ebs_info(show_unused=False):
             else:
                 ebs['Name'] = NO_VALUE
             ebs_data_list.append(ebs)
+    if len(ebs_data_list) == 0:
+        logger.info("No EBS were found")
     return ebs_data_list

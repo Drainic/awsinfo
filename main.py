@@ -5,9 +5,9 @@ import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
 from tabulate import tabulate
 
-from ebs import get_ebs_info
+from services.ebs import get_ebs_info
 from parsers import create_parser
-from s3 import S3
+from services.s3 import S3
 from settings import LOGGER_CONFIG, LOGGER_NAME
 
 logging.config.dictConfig(LOGGER_CONFIG)
@@ -30,10 +30,15 @@ for response in paginator.paginate():
 logger.info(f"Profile: {args.profile}, Region: {session.region_name}, Account_name: {account_name}, Accounf ID: {account_id}")
 
 def show_as_table(data):
+    """Show data in a table format
+
+    Args:
+        data (list): Should be a list of hashes. Keys of the first element will be used as column names
+    """
     if len(data) > 0:
         header = data[0].keys()
         rows = [i.values() for i in data]
-        print(tabulate(rows, header))
+        print(tabulate(rows, header, showindex=False, tablefmt="presto", numalign="right"))
         print("Total findings: {}\n".format(len(data)))
 
 def store_as_csv(data):
