@@ -1,7 +1,6 @@
 import logging.config
 from datetime import datetime, timedelta
 
-import boto3
 from botocore.exceptions import ClientError
 
 from settings import LOGGER_NAME, NO_VALUE

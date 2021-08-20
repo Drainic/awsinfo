@@ -39,6 +39,7 @@ def get_ebs_info(aws_session, show_unused=False):
                 for tag in item['Tags']:
                     if tag['Key'] == "Name":
                         ebs['Name'] = tag['Value']
+                        break
                     else:
                         ebs['Name'] = NO_VALUE
             else:

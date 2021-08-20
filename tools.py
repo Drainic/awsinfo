@@ -29,7 +29,7 @@ def init_connection(profile_name):
         return session
     except (ClientError, ProfileNotFound) as e:
         logger.error(e)
-        exit()
+        exit(1)
 
 def store_as_csv(data):
     if len(data) > 0:
