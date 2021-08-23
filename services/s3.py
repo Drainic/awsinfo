@@ -7,6 +7,24 @@ from settings import LOGGER_NAME, NO_VALUE
 
 logger = logging.getLogger(LOGGER_NAME)
 
+def get_s3_info(aws_session, last_modified, encryption, public):
+    s3 = aws_session.client('s3')
+    response = s3.list_buckets()
+    buckets = [bucket['Name'] for bucket in response['Buckets']]
+    data = []
+
+    for bucket_name in buckets:
+        s3_info = S3(
+            bucket_name,
+            aws_session=aws_session,
+            last_modified=last_modified,
+            encryption=encryption,
+            public=public
+        )
+        data.append(s3_info.bucket_stat)
+    return data
+
+
 class S3:
     def __init__(self, name, aws_session, last_modified=False, encryption=False, public=False) -> None:
         self.name = name
@@ -126,7 +144,7 @@ class S3:
             for grant in bucket_acl_response['Grants']:
                 for (k, v) in grant.items():
                     if k == 'Permission' and any(permission in v for permission in permissions_to_check):
-                        for (grantee_attrib_k, grantee_attrib_v) in grant['Grantee'].items():
+                        for (grantee_attrib_k, _) in grant['Grantee'].items():
                             if 'URI' in grantee_attrib_k and grant['Grantee']['URI'] == public_acl_indicator:
                                 current_permission.append(v)
             return current_permission
