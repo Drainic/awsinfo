@@ -67,4 +67,10 @@ def create_parser():
         required=False,
         help="Show only unused EVS volumes",
     )
+
+    # Command: KMS
+    parser_kms = subparsers.add_parser(
+        "kms",
+        help="get a list of KMS keys in the current AWS account",
+    )
     return parser

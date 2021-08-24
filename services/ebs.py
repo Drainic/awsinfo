@@ -1,4 +1,3 @@
-import boto3
 import logging
 from settings import NO_VALUE, LOGGER_NAME
 
