@@ -24,7 +24,6 @@ def get_s3_info(aws_session, last_modified, encryption, public):
         data.append(s3_info.bucket_stat)
     return data
 
-
 class S3:
     def __init__(self, name, aws_session, last_modified=False, encryption=False, public=False) -> None:
         self.name = name
