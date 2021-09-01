@@ -73,4 +73,10 @@ def create_parser():
         "kms",
         help="get a list of KMS keys in the current AWS account",
     )
+
+    # Command: LB
+    parser_lb = subparsers.add_parser(
+        "lb",
+        help="get a list of Load balancers in the current AWS account",
+    )
     return parser

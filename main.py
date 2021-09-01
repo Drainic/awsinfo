@@ -6,6 +6,7 @@ from parsers import create_parser
 from services.ebs import get_ebs_info
 from services.kms import get_kms_info
 from services.s3 import get_s3_info
+from services.lb import get_lb_info
 from settings import LOGGER_CONFIG, LOGGER_NAME
 
 logging.config.dictConfig(LOGGER_CONFIG)
@@ -30,6 +31,9 @@ elif args.service == 'ebs':
 elif args.service == 'kms':
     logger.info("Analysing KMS keys...")
     data = get_kms_info(aws_session=aws_session)
+elif args.service == 'lb':
+    logger.info("Analysing LBs...")
+    data = get_lb_info(aws_session=aws_session)
 
 tools.show_as_table(data)
 if args.csv:
