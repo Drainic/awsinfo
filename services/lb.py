@@ -1,19 +1,28 @@
-# List LB's (Name state Type DNS name)
-# filter for public LB's
-
 import logging
-from settings import NO_VALUE, LOGGER_NAME
 
-logger = logging.getLogger(LOGGER_NAME)
+from settings import LOGGER_NAME, NO_VALUE
+
+LOGGER = logging.getLogger(LOGGER_NAME)
 
 def get_lb_info(aws_session, public=False):
+    """Get the list of load balancers from the AWS account
+
+    Args:
+        aws_session : Internal AWS session
+        public (bool, optional): Show only public loadbalancers. Defaults to False.
+
+    Returns:
+        [type]: [description]
+    """
     # Get ELB list
-    elb_list = []
+    lb_list = []
     client = aws_session.client('elbv2')
     paginator = client.get_paginator('describe_load_balancers')
     for page in paginator.paginate():
         for lb in page['LoadBalancers']:
             lb_info = dict()
+            if public and lb['Scheme'] == 'internal':
+                continue
             lb_info['LB_name'] = lb['LoadBalancerName']
             lb_info['Schema'] = lb['Scheme']
             lb_info['State'] = lb['State']['Code']
@@ -21,7 +30,7 @@ def get_lb_info(aws_session, public=False):
             lb_info['VPC_ID'] = lb['VpcId']
             lb_info['DNS_zone'] = lb['CanonicalHostedZoneId']
             lb_info['DNS_name'] = lb['DNSName']
-            elb_list.append(lb_info)
+            lb_list.append(lb_info)
 
     # Get clasic LB list
     client = aws_session.client('elb')
@@ -29,6 +38,8 @@ def get_lb_info(aws_session, public=False):
     for page in paginator.paginate():
         for lb in page['LoadBalancerDescriptions']:
             lb_info = dict()
+            if public and lb['Scheme'] == 'internal':
+                continue
             lb_info['LB_name'] = lb['LoadBalancerName']
             lb_info['Schema'] = lb['Scheme']
             lb_info['State'] = NO_VALUE
@@ -36,9 +47,9 @@ def get_lb_info(aws_session, public=False):
             lb_info['VPC_ID'] = lb['VPCId']
             lb_info['DNS_zone'] = lb['CanonicalHostedZoneNameID']
             lb_info['DNS_name'] = lb['DNSName']
-            elb_list.append(lb_info)
+            lb_list.append(lb_info)
 
-    if len(elb_list) == 0:
-        logger.info('No ELB found')
+    if len(lb_list) == 0:
+        LOGGER.info('No ELB found')
 
-    return elb_list
+    return lb_list

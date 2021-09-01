@@ -65,7 +65,7 @@ def create_parser():
         "-u", "--unused",
         action="store_true",
         required=False,
-        help="Show only unused EVS volumes",
+        help="Show only unused EBS volumes",
     )
 
     # Command: KMS
@@ -78,5 +78,11 @@ def create_parser():
     parser_lb = subparsers.add_parser(
         "lb",
         help="get a list of Load balancers in the current AWS account",
+    )
+    parser_lb.add_argument(
+        "-p", "--public",
+        action="store_true",
+        required=False,
+        help="Show only public LBs",
     )
     return parser

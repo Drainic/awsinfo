@@ -1,4 +1,3 @@
-import asyncio
 import logging.config
 
 import tools
@@ -33,7 +32,7 @@ elif args.service == 'kms':
     data = get_kms_info(aws_session=aws_session)
 elif args.service == 'lb':
     logger.info("Analysing LBs...")
-    data = get_lb_info(aws_session=aws_session)
+    data = get_lb_info(aws_session=aws_session, public=args.public)
 
 tools.show_as_table(data)
 if args.csv:
