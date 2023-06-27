@@ -34,15 +34,15 @@ class S3:
         self.encryption = encryption
         self.client_s3 = aws_session.client('s3')
         self.client_cw = aws_session.client('cloudwatch')
-        self._get_bucket_size()
-        self._get_object_number()
+        #self._get_bucket_size()
+        #self._get_object_number()
 
     @property
     def bucket_stat(self) -> dict:
         common_info = {
             "Bucket_name": self.name,
-            "Size(MB)": self.size,
-            "ObjectNum": self.object_number
+            #"Size(MB)": self.size,
+            #"ObjectNum": self.object_number
         }
         if self.last_modified:
             common_info['Last_modified'] = self._get_last_modified_date()
@@ -50,6 +50,7 @@ class S3:
             common_info['Encrypted'], common_info['Encrypt_type'] = self._check_encryption()
         if self.public:
             common_info['Public_permissions'] = self._get_bucket_acl()
+        common_info['Versioning'] = self._check_versioning()
         return common_info
 
     def _get_last_modified_date(self) -> str:
@@ -76,7 +77,7 @@ class S3:
             enc = self.client_s3.get_bucket_encryption(Bucket=self.name)
             rules = enc['ServerSideEncryptionConfiguration']['Rules'][0]['ApplyServerSideEncryptionByDefault']
             #print('Bucket: %s, Encryption: %s' % (self.name, rules))
-            if rules['SSEAlgorithm'] ==  'AES256':
+            if rules['SSEAlgorithm'] == 'AES256':
                 return True, "SSE-S3"
             elif rules['SSEAlgorithm'] == 'aws:kms':
                 return True, "SSE-KMS"
@@ -87,6 +88,14 @@ class S3:
             else:
                 logger.error(f"Bucket: {self.name}, unexpected error: {e}")
                 return "Error", "Error"
+
+    def _check_versioning(self):
+        try:
+            response = self.client_s3.get_bucket_versioning(Bucket=self.name)
+            return response.get('Status', 'Disabled')
+        except ClientError as e:
+            logger.error(f"Bucket: {self.name}, unexpected error: {e}")
+            return "Error"
 
     def _get_bucket_size(self):
         try:
