@@ -11,7 +11,10 @@ def create_parser():
     Returns:
         parser: Python object with parsed arguments
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="awsinfo",
+        description="Get info from AWS account and shows it as a table"
+    )
     parser.add_argument(
         '-p', '--profile',
         default='default',
@@ -86,3 +89,7 @@ def create_parser():
         help="Show only public LBs",
     )
     return parser
+
+
+parser = create_parser()
+programm_args = parser.parse_args()

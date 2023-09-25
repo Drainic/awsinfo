@@ -1,10 +1,16 @@
 import logging
 
+import parsers
+import tools
 from settings import LOGGER_NAME, NO_VALUE
+
+args = parsers.programm_args
+aws_session = tools.init_connection(profile_name=args.profile)
 
 LOGGER = logging.getLogger(LOGGER_NAME)
 
-def get_lb_info(aws_session, public=False):
+@tools.show_as_table_dec
+def get_lb_info(public=False):
     """Get the list of load balancers from the AWS account
 
     Args:

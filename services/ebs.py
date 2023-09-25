@@ -1,9 +1,15 @@
 import logging
-from settings import NO_VALUE, LOGGER_NAME
+
+import parsers
+import tools
+from settings import LOGGER_NAME, NO_VALUE
 
 logger = logging.getLogger(LOGGER_NAME)
+args = parsers.programm_args
+aws_session = tools.init_connection(profile_name=args.profile)
 
-def get_ebs_info(aws_session, show_unused=False):
+@tools.show_as_table_dec
+def get_ebs_info(show_unused=False):
     """Collect information about AWS volumes
 
     Args:

@@ -1,31 +1,52 @@
+import concurrent.futures
 import logging.config
 from datetime import datetime, timedelta
 
+import tools
+import parsers
 from botocore.exceptions import ClientError
-
 from settings import LOGGER_NAME, NO_VALUE
+from tqdm import tqdm
 
 logger = logging.getLogger(LOGGER_NAME)
+args = parsers.programm_args
+aws_session = tools.init_connection(profile_name=args.profile)
 
-def get_s3_info(aws_session, last_modified, encryption, public):
+
+def s3_info(bucket_name, last_modified, encryption, public):
+    s3_info = S3(
+        bucket_name,
+        last_modified=last_modified,
+        encryption=encryption,
+        public=public
+    )
+    return s3_info.bucket_stat
+
+
+def run(f, my_iter, last_modified, encryption, public):
+    l = len(my_iter)
+    with tqdm(total=l, desc="Progress", colour='green', ncols=100) as pbar:
+        # let's give it some more threads:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {executor.submit(s3_info, arg, last_modified, encryption, public): arg for arg in my_iter}
+            results = []
+            for future in concurrent.futures.as_completed(futures):
+                arg = futures[future]
+                results.append(future.result())
+                pbar.update(1)
+    return results
+
+@tools.show_as_table_dec
+def get_s3_info(last_modified, encryption, public):
     s3 = aws_session.client('s3')
     response = s3.list_buckets()
     buckets = [bucket['Name'] for bucket in response['Buckets']]
-    data = []
 
-    for bucket_name in buckets:
-        s3_info = S3(
-            bucket_name,
-            aws_session=aws_session,
-            last_modified=last_modified,
-            encryption=encryption,
-            public=public
-        )
-        data.append(s3_info.bucket_stat)
-    return data
+    return run(s3_info, buckets, last_modified, encryption, public)
+
 
 class S3:
-    def __init__(self, name, aws_session, last_modified=False, encryption=False, public=False) -> None:
+    def __init__(self, name, last_modified=False, encryption=False, public=False) -> None:
         self.name = name
         self.size = 0
         self.object_number = 0
@@ -34,15 +55,17 @@ class S3:
         self.encryption = encryption
         self.client_s3 = aws_session.client('s3')
         self.client_cw = aws_session.client('cloudwatch')
-        #self._get_bucket_size()
-        #self._get_object_number()
+
+        # TODO: need to check how to get file number and size
+        # self._get_bucket_size()
+        # self._get_object_number()
 
     @property
     def bucket_stat(self) -> dict:
         common_info = {
             "Bucket_name": self.name,
-            #"Size(MB)": self.size,
-            #"ObjectNum": self.object_number
+            # "Size(MB)": self.size,
+            # "ObjectNum": self.object_number
         }
         if self.last_modified:
             common_info['Last_modified'] = self._get_last_modified_date()
