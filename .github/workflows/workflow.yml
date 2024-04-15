@@ -8,3 +8,14 @@ jobs:
     steps:
       - name: Display some text
         run: echo "Some text"
+  run-parallel-command:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display some text
+        run: echo "Some another text"
+  run-second-command:
+    runs-on: ubuntu-latest
+    needs: run-parallel-command
+    steps:
+      - name: Node version
+        run: node -v
