@@ -1,13 +1,15 @@
 """Support stuff for main.py
 """
-
+import concurrent.futures
 import csv
 import functools
 import logging
+from typing import NoReturn
 
 import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
 from tabulate import tabulate
+from tqdm import tqdm
 
 from settings import LOGGER_NAME
 
@@ -34,7 +36,12 @@ def init_connection(profile_name):
         exit(1)
 
 
-def store_as_csv(data):
+def store_as_csv(data: list) -> NoReturn:
+    """Takes the list of dicts and save is as a CSV file (result.csv) in the same folder
+
+    Args:
+        data (List[Dict]): Should be a list of dictionares. Dicts keays are used as column names
+    """
     if len(data) > 0:
         with open('result.csv', 'w', newline='') as output_file:
             data_writer = csv.DictWriter(output_file, fieldnames=data[0].keys())
@@ -43,6 +50,18 @@ def store_as_csv(data):
             logger.info("The file %s was created", output_file.name)
 
 
+def run_thread(f, my_iter, *args, **kwargs):
+    with tqdm(total=len(my_iter), desc="Progress", colour='green', ncols=100) as pbar:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {executor.submit(f, arg, *args, **kwargs): arg for arg in my_iter}
+            results = []
+            for future in concurrent.futures.as_completed(futures):
+                results.append(future.result())
+                pbar.update(1)
+    return results
+
+
+# Decorators
 def add_footer(func):
     @functools.wraps(func)
     def wrapper_function(*args, **kwargs):
@@ -53,7 +72,9 @@ def add_footer(func):
     return wrapper_function
 
 
-def show_as_table_dec(func):
+def show_as_table(func):
+    """The decorator takes a function which returns list of string or dicts
+    and show it in console as a table"""
     @functools.wraps(func)
     @add_footer
     def wrapper_table(*args, **kwargs):

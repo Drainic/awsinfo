@@ -88,6 +88,11 @@ def create_parser():
         required=False,
         help="Show only public LBs",
     )
+
+    parser_lb = subparsers.add_parser(
+        "glue",
+        help="get a list of Glue DBs and it's tables in the current AWS account",
+    )
     return parser
 
 

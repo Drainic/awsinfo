@@ -5,7 +5,7 @@ import tools
 args = parsers.programm_args
 aws_session = tools.init_connection(profile_name=args.profile)
 
-@tools.show_as_table_dec
+@tools.show_as_table
 def get_kms_info():
     client = aws_session.client('kms')
     kms_keys = []

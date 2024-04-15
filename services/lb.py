@@ -9,7 +9,7 @@ aws_session = tools.init_connection(profile_name=args.profile)
 
 LOGGER = logging.getLogger(LOGGER_NAME)
 
-@tools.show_as_table_dec
+@tools.show_as_table
 def get_lb_info(public=False):
     """Get the list of load balancers from the AWS account
 

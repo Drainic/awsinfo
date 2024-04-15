@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
 import logging.config
 
-import tools
 import parsers
+import tools
 from services.ebs import get_ebs_info
+from services.glue import get_glue_info
 from services.kms import get_kms_info
 from services.lb import get_lb_info
 from services.s3 import get_s3_info
@@ -12,8 +14,6 @@ logging.config.dictConfig(LOGGER_CONFIG)
 logger = logging.getLogger(LOGGER_NAME)
 
 args = parsers.programm_args
-
-# aws_session = tools.init_connection(profile_name=args.profile)
 
 if args.service == 's3':
     logger.info("Analysing S3...")
@@ -31,6 +31,9 @@ elif args.service == 'kms':
 elif args.service == 'lb':
     logger.info("Analysing LBs...")
     data = get_lb_info(public=args.public)
+elif args.service == 'glue':
+    logger.info("Analysing Glue DBs...")
+    data = get_glue_info()
 
 if args.csv:
     tools.store_as_csv(data=data)

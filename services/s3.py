@@ -1,4 +1,3 @@
-import concurrent.futures
 import logging.config
 from datetime import datetime, timedelta
 
@@ -6,7 +5,6 @@ import tools
 import parsers
 from botocore.exceptions import ClientError
 from settings import LOGGER_NAME, NO_VALUE
-from tqdm import tqdm
 
 logger = logging.getLogger(LOGGER_NAME)
 args = parsers.programm_args
@@ -23,26 +21,12 @@ def s3_info(bucket_name, last_modified, encryption, public):
     return s3_info.bucket_stat
 
 
-def run(f, my_iter, last_modified, encryption, public):
-    l = len(my_iter)
-    with tqdm(total=l, desc="Progress", colour='green', ncols=100) as pbar:
-        # let's give it some more threads:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-            futures = {executor.submit(s3_info, arg, last_modified, encryption, public): arg for arg in my_iter}
-            results = []
-            for future in concurrent.futures.as_completed(futures):
-                arg = futures[future]
-                results.append(future.result())
-                pbar.update(1)
-    return results
-
-@tools.show_as_table_dec
+@tools.show_as_table
 def get_s3_info(last_modified, encryption, public):
     s3 = aws_session.client('s3')
     response = s3.list_buckets()
     buckets = [bucket['Name'] for bucket in response['Buckets']]
-
-    return run(s3_info, buckets, last_modified, encryption, public)
+    return tools.run_thread(s3_info, buckets, last_modified, encryption, public)
 
 
 class S3:

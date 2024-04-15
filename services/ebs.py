@@ -8,7 +8,7 @@ logger = logging.getLogger(LOGGER_NAME)
 args = parsers.programm_args
 aws_session = tools.init_connection(profile_name=args.profile)
 
-@tools.show_as_table_dec
+@tools.show_as_table
 def get_ebs_info(show_unused=False):
     """Collect information about AWS volumes
 
