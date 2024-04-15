@@ -11,7 +11,10 @@ def create_parser():
     Returns:
         parser: Python object with parsed arguments
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="awsinfo",
+        description="Get info from AWS account and shows it as a table"
+    )
     parser.add_argument(
         '-p', '--profile',
         default='default',
@@ -65,7 +68,7 @@ def create_parser():
         "-u", "--unused",
         action="store_true",
         required=False,
-        help="Show only unused EVS volumes",
+        help="Show only unused EBS volumes",
     )
 
     # Command: KMS
@@ -73,4 +76,25 @@ def create_parser():
         "kms",
         help="get a list of KMS keys in the current AWS account",
     )
+
+    # Command: LB
+    parser_lb = subparsers.add_parser(
+        "lb",
+        help="get a list of Load balancers in the current AWS account",
+    )
+    parser_lb.add_argument(
+        "-p", "--public",
+        action="store_true",
+        required=False,
+        help="Show only public LBs",
+    )
+
+    parser_lb = subparsers.add_parser(
+        "glue",
+        help="get a list of Glue DBs and it's tables in the current AWS account",
+    )
     return parser
+
+
+parser = create_parser()
+programm_args = parser.parse_args()

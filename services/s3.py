@@ -1,31 +1,36 @@
 import logging.config
 from datetime import datetime, timedelta
 
+import tools
+import parsers
 from botocore.exceptions import ClientError
-
 from settings import LOGGER_NAME, NO_VALUE
 
 logger = logging.getLogger(LOGGER_NAME)
+args = parsers.programm_args
+aws_session = tools.init_connection(profile_name=args.profile)
 
-def get_s3_info(aws_session, last_modified, encryption, public):
+
+def s3_info(bucket_name, last_modified, encryption, public):
+    s3_info = S3(
+        bucket_name,
+        last_modified=last_modified,
+        encryption=encryption,
+        public=public
+    )
+    return s3_info.bucket_stat
+
+
+@tools.show_as_table
+def get_s3_info(last_modified, encryption, public):
     s3 = aws_session.client('s3')
     response = s3.list_buckets()
     buckets = [bucket['Name'] for bucket in response['Buckets']]
-    data = []
+    return tools.run_thread(s3_info, buckets, last_modified, encryption, public)
 
-    for bucket_name in buckets:
-        s3_info = S3(
-            bucket_name,
-            aws_session=aws_session,
-            last_modified=last_modified,
-            encryption=encryption,
-            public=public
-        )
-        data.append(s3_info.bucket_stat)
-    return data
 
 class S3:
-    def __init__(self, name, aws_session, last_modified=False, encryption=False, public=False) -> None:
+    def __init__(self, name, last_modified=False, encryption=False, public=False) -> None:
         self.name = name
         self.size = 0
         self.object_number = 0
@@ -34,15 +39,17 @@ class S3:
         self.encryption = encryption
         self.client_s3 = aws_session.client('s3')
         self.client_cw = aws_session.client('cloudwatch')
-        self._get_bucket_size()
-        self._get_object_number()
+
+        # TODO: need to check how to get file number and size
+        # self._get_bucket_size()
+        # self._get_object_number()
 
     @property
     def bucket_stat(self) -> dict:
         common_info = {
             "Bucket_name": self.name,
-            "Size(MB)": self.size,
-            "ObjectNum": self.object_number
+            # "Size(MB)": self.size,
+            # "ObjectNum": self.object_number
         }
         if self.last_modified:
             common_info['Last_modified'] = self._get_last_modified_date()
@@ -50,6 +57,7 @@ class S3:
             common_info['Encrypted'], common_info['Encrypt_type'] = self._check_encryption()
         if self.public:
             common_info['Public_permissions'] = self._get_bucket_acl()
+        common_info['Versioning'] = self._check_versioning()
         return common_info
 
     def _get_last_modified_date(self) -> str:
@@ -76,7 +84,7 @@ class S3:
             enc = self.client_s3.get_bucket_encryption(Bucket=self.name)
             rules = enc['ServerSideEncryptionConfiguration']['Rules'][0]['ApplyServerSideEncryptionByDefault']
             #print('Bucket: %s, Encryption: %s' % (self.name, rules))
-            if rules['SSEAlgorithm'] ==  'AES256':
+            if rules['SSEAlgorithm'] == 'AES256':
                 return True, "SSE-S3"
             elif rules['SSEAlgorithm'] == 'aws:kms':
                 return True, "SSE-KMS"
@@ -87,6 +95,14 @@ class S3:
             else:
                 logger.error(f"Bucket: {self.name}, unexpected error: {e}")
                 return "Error", "Error"
+
+    def _check_versioning(self):
+        try:
+            response = self.client_s3.get_bucket_versioning(Bucket=self.name)
+            return response.get('Status', 'Disabled')
+        except ClientError as e:
+            logger.error(f"Bucket: {self.name}, unexpected error: {e}")
+            return "Error"
 
     def _get_bucket_size(self):
         try:
