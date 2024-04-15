@@ -46,4 +46,3 @@ def get_glue_db_tables(database_name) -> List[Dict]:
 def get_glue_info():
     glue_db_list = get_glue_db_list()
     return tools.run_thread(get_glue_db_tables, glue_db_list)
-
