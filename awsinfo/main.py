@@ -35,6 +35,9 @@ elif args.service == 'glue':
     logger.info("Analysing Glue DBs...")
     data = get_glue_info()
 
+def anton():
+ print("Hi")
+
 if args.csv:
     tools.store_as_csv(data=data)
 exit()

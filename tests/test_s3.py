@@ -1,8 +1,9 @@
 import boto3
-from moto import mock_s3
 import pytest
+from awsinfo import main
+from moto import mock_aws
 
-@mock_s3
+@mock_aws
 def test_list_s3_buckets():
     # Create a mock S3 bucket
     s3 = boto3.client('s3', region_name='us-east-1')
@@ -17,3 +18,4 @@ def test_list_s3_buckets():
 
 if __name__ == '__main__':
     pytest.main()
+    main.anton()
