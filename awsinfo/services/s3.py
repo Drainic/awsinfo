@@ -26,6 +26,7 @@ def get_s3_info(last_modified, encryption, public):
     s3 = aws_session.client('s3')
     response = s3.list_buckets()
     buckets = [bucket['Name'] for bucket in response['Buckets']]
+    # buckets = buckets[:10]
     return tools.run_thread(s3_info, buckets, last_modified, encryption, public)
 
 
@@ -47,17 +48,14 @@ class S3:
     @property
     def bucket_stat(self) -> dict:
         common_info = {
-            "Bucket_name": self.name,
-            # "Size(MB)": self.size,
-            # "ObjectNum": self.object_number
+            'Bucket_name': self.name,
+            'Last_modified': self._get_last_modified_date() if self.last_modified else NO_VALUE,
+            'Versioning': self._check_versioning(),
+            'Public_permissions': self._get_bucket_acl(),
+            'Encrypted': self._check_encryption() ,
         }
-        if self.last_modified:
-            common_info['Last_modified'] = self._get_last_modified_date()
-        if self.encryption:
-            common_info['Encrypted'], common_info['Encrypt_type'] = self._check_encryption()
-        if self.public:
-            common_info['Public_permissions'] = self._get_bucket_acl()
-        common_info['Versioning'] = self._check_versioning()
+        # if self.last_modified:
+        #     common_info['Last_modified'] = self._get_last_modified_date()
         return common_info
 
     def _get_last_modified_date(self) -> str:
@@ -79,22 +77,21 @@ class S3:
                 logger.error(e)
                 return "NoPermission"
 
-    def _check_encryption(self):
+    def _check_encryption(self) -> str:
         try:
             enc = self.client_s3.get_bucket_encryption(Bucket=self.name)
             rules = enc['ServerSideEncryptionConfiguration']['Rules'][0]['ApplyServerSideEncryptionByDefault']
-            #print('Bucket: %s, Encryption: %s' % (self.name, rules))
             if rules['SSEAlgorithm'] == 'AES256':
-                return True, "SSE-S3"
+                return "SSE-S3"
             elif rules['SSEAlgorithm'] == 'aws:kms':
-                return True, "SSE-KMS"
+                return "SSE-KMS"
         except ClientError as e:
             # In case if there is no encryption in place
             if e.response['Error']['Code'] == 'ServerSideEncryptionConfigurationNotFoundError':
-                return False, NO_VALUE
+                return "Disabled"
             else:
                 logger.error(f"Bucket: {self.name}, unexpected error: {e}")
-                return "Error", "Error"
+                return "Error"
 
     def _check_versioning(self):
         try:
@@ -104,28 +101,28 @@ class S3:
             logger.error(f"Bucket: {self.name}, unexpected error: {e}")
             return "Error"
 
-    def _get_bucket_size(self):
-        try:
-            response = self.client_cw.get_metric_statistics(
-                Namespace='AWS/S3',
-                MetricName='BucketSizeBytes',
-                Dimensions=[
-                    {'Name': 'BucketName', 'Value': self.name},
-                    {'Name': 'StorageType', 'Value': 'StandardStorage'}
-                ],
-                Statistics=['Average'],
-                Period=3600,
-                StartTime=datetime.now() - timedelta(days=2),
-                EndTime=datetime.now(),
-                Unit='Bytes'
-            )
-            if len(response["Datapoints"]) > 0:
-                self.size = round(int(response["Datapoints"][0]["Average"])/1024/1024, 2)
-            else:
-                self.size = NO_VALUE
-        except ClientError as e:
-            logger.error(e)
-            self.size = "NoPermissions"
+    # def _get_bucket_size(self):
+    #     try:
+    #         response = self.client_cw.get_metric_statistics(
+    #             Namespace='AWS/S3',
+    #             MetricName='BucketSizeBytes',
+    #             Dimensions=[
+    #                 {'Name': 'BucketName', 'Value': self.name},
+    #                 {'Name': 'StorageType', 'Value': 'StandardStorage'}
+    #             ],
+    #             Statistics=['Average'],
+    #             Period=3600,
+    #             StartTime=datetime.now() - timedelta(days=2),
+    #             EndTime=datetime.now(),
+    #             Unit='Bytes'
+    #         )
+    #         if len(response["Datapoints"]) > 0:
+    #             self.size = round(int(response["Datapoints"][0]["Average"])/1024/1024, 2)
+    #         else:
+    #             self.size = NO_VALUE
+    #     except ClientError as e:
+    #         logger.error(e)
+    #         self.size = "NoPermissions"
 
     def _get_object_number(self) -> int:
         try:
@@ -162,6 +159,6 @@ class S3:
                         for (grantee_attrib_k, _) in grant['Grantee'].items():
                             if 'URI' in grantee_attrib_k and grant['Grantee']['URI'] == public_acl_indicator:
                                 current_permission.append(v)
-            return current_permission
+            return current_permission if len(current_permission) > 0 else NO_VALUE
         except ClientError as e:
             logger.error(e)
