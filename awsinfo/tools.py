@@ -4,7 +4,7 @@ import concurrent.futures
 import csv
 import functools
 import logging
-from typing import NoReturn
+from typing import NoReturn, List, Dict
 
 import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
@@ -50,7 +50,7 @@ def store_as_csv(data: list) -> NoReturn:
             logger.info("The file %s was created", output_file.name)
 
 
-def run_thread(f, my_iter, *args, **kwargs):
+def run_thread(f, my_iter, *args, **kwargs) -> List[Dict] :
     with tqdm(total=len(my_iter), desc="Progress", colour='green', ncols=100) as pbar:
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             futures = {executor.submit(f, arg, *args, **kwargs): arg for arg in my_iter}

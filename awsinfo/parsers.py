@@ -35,10 +35,10 @@ def create_parser():
         help="The service name for getting information"
     )
 
-    # Command: s3
+    # Service: s3
     parser_s3 = subparsers.add_parser(
         "s3",
-        help="get a list of S3 bucket from the current AWS account",
+        help="Show all S3 bucket from the current AWS account",
     )
     parser_s3.add_argument(
         "-m", "--modified",
@@ -59,10 +59,10 @@ def create_parser():
         help="Check public permissions for the S3 bucket",
     )
 
-    # Command: EBS
+    # Service: EBS
     parser_ebs = subparsers.add_parser(
         "ebs",
-        help="get a list of EBS in the current AWS account",
+        help="Show all EBS in the current AWS account",
     )
     parser_ebs.add_argument(
         "-u", "--unused",
@@ -71,16 +71,22 @@ def create_parser():
         help="Show only unused EBS volumes",
     )
 
-    # Command: KMS
+    # Service: KMS
     parser_kms = subparsers.add_parser(
         "kms",
-        help="get a list of KMS keys in the current AWS account",
+        help="Show all KMS keys in the current AWS account",
     )
 
-    # Command: LB
+    # Service: Lambda
+    parser_kms = subparsers.add_parser(
+        "lambda",
+        help="Show all Lambda functions in the current AWS account",
+    )
+
+    # Service: LB
     parser_lb = subparsers.add_parser(
         "lb",
-        help="get a list of Load balancers in the current AWS account",
+        help="Show all Load balancers in the current AWS account",
     )
     parser_lb.add_argument(
         "-p", "--public",
@@ -91,7 +97,7 @@ def create_parser():
 
     parser_lb = subparsers.add_parser(
         "glue",
-        help="get a list of Glue DBs and it's tables in the current AWS account",
+        help="Show all Glue DBs and it's tables in the current AWS account",
     )
     return parser
 
