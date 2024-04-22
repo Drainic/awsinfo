@@ -8,7 +8,7 @@ from services.glue import get_glue_info
 from services.kms import get_kms_info
 from services.lb import get_lb_info
 from services.s3 import get_s3_info
-from services.lambda_f import get_info
+from services.aws_lambda import get_info
 from settings import LOGGER_CONFIG, LOGGER_NAME
 
 logging.config.dictConfig(LOGGER_CONFIG)

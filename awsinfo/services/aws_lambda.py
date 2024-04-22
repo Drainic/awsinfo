@@ -14,11 +14,9 @@ def list_lambdas() -> List[Dict]:
 
     return functions
 
-unused_functions = []
-
 # TODO: add parameters instead of using 6 month
 
-def get_lambda_info(function):
+def get_lambda_info(function) -> Dict:
     cloudwatch = boto3.client('cloudwatch')
     response = cloudwatch.get_metric_statistics(
         Namespace='AWS/Lambda',
